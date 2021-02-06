@@ -66,6 +66,21 @@ def earn_money (user_id, amount):
     db.session.commit()
     return True
 
+
+def spend_money (user_id, amount):
+    if amount <= 0:
+        return False
+    control = update_account(user_id, amount * -1)
+    if not control:
+        return False
+    spend = Spending(amount, datetime.now(), user_id)
+    db.session.add(spend)
+    db.session.commit()
+    return True
+
+
+
+
 def update_account (user_id, amount):
     account = db.session.query(Account).get(user_id)
     db.session.commit()
@@ -74,3 +89,23 @@ def update_account (user_id, amount):
     account.balance = account.balance + amount
     db.session.commit()
     return True
+
+
+# def spend_money(user_id, amount):
+#     if amount <= 0:
+#         return False
+#     control = update_account(user_id, amount * -1)
+#     if not control:
+#         return False
+#     spend = Spending(amount, datetime.now(), user_id)
+#     db.session.add(spend)
+#     db.session.commit()
+#     return True
+
+def list_earnings (user_id, month, year):
+    earnings = db.session.query(Earning).filter_by(accounts_id=user_id
+        ).filter(extract('month', Earning.when) == month
+        ).filter(extract('year', Earning.when) == year
+        ).all()
+    db.session.commit()
+    return earnings
