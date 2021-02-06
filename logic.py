@@ -102,10 +102,80 @@ def update_account (user_id, amount):
 #     db.session.commit()
 #     return True
 
-def list_earnings (user_id, month, year):
-    earnings = db.session.query(Earning).filter_by(accounts_id=user_id
-        ).filter(extract('month', Earning.when) == month
-        ).filter(extract('year', Earning.when) == year
+def list_earnings(user_id, month, year):
+    earnings = db.session.query(
+        Earning
+        ).filter_by(
+            accounts_id=user_id
+        ).filter(
+            extract('month', Earning.when) == month
+        ).filter(
+            extract('year', Earning.when) == year
         ).all()
     db.session.commit()
     return earnings
+
+def list_spendings(user_id, month, year):
+    earnings = db.session.query(
+        Spending
+        ).filter_by(
+            accounts_id=user_id
+        ).filter(
+            extract('month', Spending.when) == month
+        ).filter(
+            extract('year', Spending.when) == year
+        ).all()
+    db.session.commit()
+    return earnings
+
+
+def remove_earning (user_id, index):
+    record = db.session.query(
+        Earning
+    ).filter(
+        Earning.accounts_id == user_id
+    ).filter(
+        Earning.id == index
+    ).first()
+
+    if not record:
+        db.session.rollback()
+        return False
+
+    control = update_account(user_id, record.amount * -1)
+
+    if not control:
+        db.session.rollback()
+        return False
+    
+    db.session.delete(record)
+    db.session.commit()
+    return True
+
+
+def remove_spending(user_id, index):
+    record = db.session.query(
+        Spending
+    ).filter(
+        Spending.accounts_id == user_id
+    ).filter(
+        Spending.id == index
+    ).first()
+
+    if not record:
+        db.session.rollback()
+        return False
+
+    control = update_account(user_id, record.amount)
+
+    if not control:
+        db.session.rollback()
+        return False
+
+    db.session.delete(record)
+    db.session.commit()
+    return True
+
+def get_fallback_message (text):
+    response = f"\U0001F648 No entendí lo que me acabas de decir"
+    return response

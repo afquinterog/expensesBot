@@ -101,29 +101,78 @@ def on_list_earnings(message):
         text = f"\U0001F633 No tienes ganancias registradas en {month}/{year}"
     else:
         text = "``` Listado de ganancias:\n\n"
-
-    for e in earnings:
-        total += e.amount
-        text += f"| {e.id} | ${e.amount} | ({e.when.strftime('%d/%m/%Y -%H:%M')}) |\n"
+        for e in earnings:
+            total += e.amount
+            text += f"| {e.id} | ${e.amount} | ({e.when.strftime('%d/%m/%Y -%H:%M')}) |\n"
     
-    text += f"\nTOTAL = ${total}"
-    text += "```"
+        text += f"\nTOTAL = ${total}"
+        text += "```"
     
     bot.reply_to(message, text, parse_mode="Markdown")
 
-
 @bot.message_handler(regexp=r"^(listar gastos|lgg) en ([0-9]{1,2}) de ([0-9]{4})$")
 def on_list_spendings(message):
-    pass
+    bot.send_chat_action(message.chat.id, 'typing')
+    parts = re.match(r"^(listar gastos|lgg) en ([0-9]{1,2}) de ([0-9]{4})$", message.text)
+    month = int(parts[2])
+    year = int(parts[3])
 
+    if month < 1 or month > 12:
+        bot.reply_to(message, f"Error, mes inválido: {month}")
+        return
+
+    if year < 1990 or year > 2050:
+        bot.reply_to(message, f"Error, año inválido: {year}")
+        return
+
+    spendings = logic.list_spendings (message.from_user.id, month, year)
+    
+    text = ""
+    total = 0
+
+    if not spendings:
+        text = f"\U0001F633 No tienes gastos registrados en {month}/{year}"
+    else:
+        text = "``` Listado de gastos:\n\n"
+        for s in spendings:
+            total += s.amount
+            text += f"| {s.id} | ${s.amount} | ({s.when.strftime('%d/%m/%Y -%H:%M')}) |\n"
+        text += f"\nTOTAL = ${total}"
+        text += "```"
+    bot.reply_to(message, text, parse_mode="Markdown")
 
 @bot.message_handler(regexp=r"^(remover|r) (ganancia|g|gasto|gg) ([0-9]+)$")
 def on_remove_record(message):
-    pass
+    bot.send_chat_action(message.chat.id, 'typing')
+    parts = re.match(r"^(remover|r) (ganancia|g|gasto|gg) ([0-9]+)$", message.text)
+    record_type = parts[2]
+    index = int(parts[3])
+
+    if record_type not in ["ganancia", "g", "gasto", "gg"]:
+        bot.reply_to(message, f"Error, tipo de registro inválido:{record_type}")
+        return
+
+    if index < 0:
+        bot.reply_to(message, f"Error, índice inválido: {index}")
+        return
+
+    response = False
+    if record_type == "ganancia" or record_type == "g":
+        response = logic.remove_earning(message.from_user.id, index)
+    elif record_type == "gasto" or record_type == "gg":
+        response = logic.remove_spending(message.from_user.id, index)
+    if response:
+        bot.reply_to(message, f"Registro removido: {record_type}, {index}")
+    else:
+        bot.reply_to(message, f"No se pudo remover el registro: {index}")
+
 
 @bot.message_handler(func=lambda message: True)
 def on_fallback(message):
-    pass
+    bot.send_chat_action(message.chat.id, 'typing')
+    sleep(1)
+    response = logic.get_fallback_message(message.text)
+    bot.reply_to(message, response)
 
 
 if __name__ == '__main__':
