@@ -29,6 +29,27 @@ def on_command_about(message):
     bot.send_message( message.chat.id, logic.get_about_this(config.VERSION), parse_mode="Markdown")
 
 
+@bot.message_handler(regexp=r"^(obtener saldo|s)$")
+def on_get_balance(message):
+    bot.send_chat_action(message.chat.id, 'typing')
+    balance = logic.get_balance(message.from_user.id)
+    text = "\U0000274C Aún no tienes una cuenta asociada, ejecuta /start para arreglarlo."
+    if balance != None:
+        text = f"Tu saldo actual es ${balance}"
+    bot.reply_to(message, text)
+
+@bot.message_handler(regexp=r"^(gane|gané|g) ([+-]?([0-9]*[.])?[0-9]+)$")
+def on_earn_money(message):
+    bot.send_chat_action(message.chat.id, 'typing')
+    parts = re.match(r"^(gane|gané|g) ([+-]?([0-9]*[.])?[0-9]+)$", message.text)
+    # print (parts.groups())
+    amount = float(parts[2])
+    control = logic.earn_money(message.from_user.id, amount)
+    bot.reply_to(
+        message, 
+        f"\U0001F4B0 ¡Dinero ganado!: {amount}" if control == True 
+        else "\U0001F4A9 Tuve problemas registrando la transacción, ejecuta/start y vuelve a intentarlo")
+
 @bot.message_handler(regexp=r"^(gane|gané|g) ([+-]?([0-9]*[.])?[0-9]+)$")
 def on_earn_money(message):
     pass
@@ -48,10 +69,6 @@ def on_list_earnings(message):
 def on_list_spendings(message):
     pass
 
-
-@bot.message_handler(regexp=r"^(obtener saldo|s)$")
-def on_get_balance(message):
-    pass
 
 @bot.message_handler(regexp=r"^(remover|r) (ganancia|g|gasto|gg) ([0-9]+)$")
 def on_remove_record(message):
